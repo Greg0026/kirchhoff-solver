@@ -1,4 +1,5 @@
 from circuit.components import *
+from circuit.utils import *
 from collections import defaultdict
 
 class BreadBoard:
@@ -8,13 +9,14 @@ class BreadBoard:
     def __init__(self, root: ctk.CTk):
         # attributes
         self.root = root
-        self.canvas = ctk.CTkCanvas(root, width=1000, height=1000) # canvas object
+        self.canvas = ctk.CTkCanvas(root, width=1000, height=800) # canvas object
         self.pin_coordinates = [i*30+20 for i in range(50)] # 1d coordinates
         self.tracking = False # is tracking on?
         self.prev = Wire(self.canvas, [0, 0], [0, 0]) # useful to animation
         self.component = "wire"
         self.value = 0
         self.elements = [0]
+        self.nodes = []
         self.connections = defaultdict(set)
         self.row = 0
 
@@ -56,8 +58,7 @@ class BreadBoard:
                 for comp in self.elements:
                     if el!=comp and (el.start==comp.start or el.end==comp.end or el.end==comp.start or el.start==comp.end):
                         self.connections[el.canvasID].add(comp.canvasID)
-
-
+        self.study()
 
     '''
     Pin Managment
@@ -149,159 +150,45 @@ class BreadBoard:
         branches = []
         nodes = []
         nodes_1d = set()
-
-        # looking for nodes
-        for s in self.connections:
-            l = set()
-            if len(self.connections[s])>2:
-                nodes_1d.add(s)
-                l.add(s)
-                for el in self.connections[s]:
-                    if len(self.connections[el])>2:
-                        l.add(el)
-                if l not in nodes and len(l)==3:
-                    nodes.append(l)
-
-        # looking for branches
-        for m in nodes:
-            for node in m: 
-                branch = []
-                for el in self.connections[node]:
-                    branch.append(node)
-                    if el not in m:
-                        branch.append(el)
-                        if el in nodes_1d:
-                            break
-                        prev = node
-                        while True:
-                            for x in self.connections[el]:
-                                if x!=prev:
-                                    branch.append(x)
-                                    prev = el
-                                    el = x
-                                    break
-                            if len(self.connections[el])>2 : break
-                if branch!=[]:
-                    branches.append(branch)
-        
-        # studio delle maglie
-        '''        maglie = [] 
-
-        def followConnections(starting_node, maglia, element, previous, traversed_node=[]):
-            print("Follow Connections: ", element)
-            if len(self.connections[element])>2:
-                eachNode(starting_node, maglia.copy(), element, previous, traversed_node)
-            for x in self.connections[element]:
-                if x!=previous:
-                    maglia.append(x)
-                    previous = element
-                    element = x
-                    break
-            
-            if x in starting_node:
-                maglie.append(maglia)
-                print("-"*100)
-                return
-
-            for i in traversed_node:
-                if x in i:
-                    return
-                
-            followConnections(starting_node, maglia.copy(), element, previous)
-
-        def eachNode(starting_node, maglia, element, previous, traversed_node):
-            print("Each Node: ", element)
-            for branch in self.connections[element]:
-                if branch in nodes_1d and branch!=previous:#
-                    maglia.append(branch)
-                    for x in self.connections[branch]:
-                        if x not in self.connections[element] and x!=element:
-                            maglia.append(x)
-                            new_prev = branch
-                            traversed_node.append(self.connections[element])
-                            followConnections(starting_node, maglia.copy(), x, new_prev, traversed_node)
-
-        for node in nodes:
-            for branch in node:
-                maglia = []
-                for el in self.connections[branch]:
-                    if el not in node:
-                        maglia = [branch]
-                        maglia.append(el)
-                        prev = branch
-                        print("STARTING ELEMENT: ", el)
-                        followConnections(node, maglia, el, prev, traversed_node=[])'''
-
-
-        # remove duplicates
-        nodup = []
-        for branch in branches:
-            nodup.append([])
-            for el in branch:
-                if el not in nodup[-1]:
-                    nodup[-1].append(el)
-        branches = nodup
-
-        # studio delle maglie 
-        maglie = []
-        i = 0
         startLink = defaultdict(list)
         endLink = defaultdict(list)
 
-        for node in nodes:
-            for branch in branches:
-                if branch[0] in node:
-                    startLink[i].append(branch)
-                if branch[-1] in node:
-                    endLink[i].append(branch)
-            i+=1
+        searchNodes(self.connections, nodes, nodes_1d)
+        searchBranches(self.connections, nodes, nodes_1d, branches)
+        searchCycles(self.connections, nodes, nodes_1d, branches, maglie, startLink, endLink)
 
-        for group in startLink:
-            for branch in startLink[group]:
-                i = 0
-                for node in nodes:
-                    if branch[-1] in node:
-                        for el in startLink[i]:
-                            if el[-1]!=branch[0]:
-                                maglie.append([branch, el])
-
-                    i+=1
-
-        finale = []
-        iniziali = maglie.copy()
-
-        for maglia in maglie:
-            good = False
-
-            while not good:
-                for node in nodes:
-                    for comp in maglia:
-                        if maglia[0][-1] in node and comp[-1] in node and maglia[0]!=comp:
-                            good = True
-                            break
-        
-                    if maglia[0][0] in node and maglia[-1][-1] in node:
-                        good = True
-                        finale.append(maglia)
+        # ricerca delle equazioni
+        '''
+        Per un circuito di n rami, le leggi di kirchhoff forniscono un
+        sistema di n equazioni lineari tra loro indipendenti che contiene n incognite.
+        '''
+        '''sys = []
+        for el in startLink:
+            sys.append([])
+            for branch in startLink[el]:
+                for comp in maglie:
+                    if branch in comp and comp not in sys:
+                        sys[-1].append(comp)
                         break
-                
-                for branch in branches:
-                    if maglia.count(branch)>2:
-                        good=True 
+        
+        self.nodes = nodes_1d'''
 
-                if not good: 
-                    for scnd in iniziali:
-                        if scnd[0]==maglia[-1]:
-                            maglie.append(maglia+scnd)
-                            good=True
-            
+        sys = []
+        for m in maglie:
+            if m[0] == maglie[12][0]:
+                sys.append(m)
 
-        for m in finale:
+        
+
+        for m in maglie:
             print(m)
+        print('-'*200)
+        for eq in sys:
+            print(eq)
+        print('-'*200)
         print(f"connections: {self.connections}")
         print(f"nodes: {nodes}")
         print(f"branches: {branches}")
-
 
     '''
     Deletes button function
