@@ -14,13 +14,13 @@ def main():
 
     def newComponent(component: str, value: int = 5):
         circuit.component = component
-        circuit.value = value
+        circuit.value = int(value)
 
-    def combobox_callback(choice):
-        print("combobox dropdown clicked:", choice)
+    def combobox_callback():
+        pass
 
-    genval = ctk.CTkEntry(root, placeholder_text='Corrente erogata')
-    resval = ctk.CTkEntry(root, placeholder_text='Resistenza opposta')
+    genval = ctk.CTkEntry(root, placeholder_text='Corrente erogata (V)')
+    resval = ctk.CTkEntry(root, placeholder_text='Resistenza opposta (Ω)')
 
     sideMenu = [
         ctk.CTkLabel(root, text="Aggiungi un nuovo componente", font=('Helvetica', 20)),
@@ -28,8 +28,7 @@ def main():
         ctk.CTkButton(root, text="Generatore", corner_radius=4, font=('Helvetica', 16), command=lambda: newComponent('generator', genval.get())),
         genval,
         ctk.CTkButton(root, text="Resistore", corner_radius=4, font=('Helvetica', 16), command=lambda: newComponent('resistor', resval.get())),
-        resval,
-        
+        resval
     ]
 
     ctrlPanel = [
@@ -38,14 +37,14 @@ def main():
                         width=160,
                         font=('Helvetica', 15),
                         dropdown_font=('Helvetica', 15), 
-                        values=[str(el) for el in circuit.nodes],
+                        values=[str(el) for el in circuit.nodes_1d],
                         command=combobox_callback,
                         variable=ctk.StringVar(value="Corrente Entrante")),
         ctk.CTkComboBox(master=root,
                         width=160,
                         font=('Helvetica', 15),
                         dropdown_font=('Helvetica', 15), 
-                        values=[str(el) for el in circuit.nodes],
+                        values=[str(el) for el in circuit.nodes_1d],
                         command=combobox_callback,
                         variable=ctk.StringVar(value="Corrente Uscente")),
         ctk.CTkButton(root, width=175, text="Calcola", corner_radius=4, font=('Helvetica', 16), fg_color="green", command=circuit.study),
