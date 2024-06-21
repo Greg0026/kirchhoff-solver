@@ -25,5 +25,16 @@ Contiene 4 classi fondamentali:
 - class Resistor(Component);
 - class Generator(Component).
   
-Ereditano tutte il comportamento della prima e contengono quindi: un costruttore, un funzione draw (che le disegna nello spazio canvas), una funzione delete per l'eliminazione.
+Ereditano tutte il comportamento della prima e contengono quindi: un costruttore, un metodo draw (che le disegna nello spazio canvas), un metodo delete per l'eliminazione completa del componente.
 Condividono inoltre l'impostazione delle variabili: self.start, self.end, self.circuit.
+
+**Spiegazione dettagliata del codice**: *base.py*
+=======================================================
+
+Dal nome del file si intuisce che esso sta alla base di tutto. *base.py* si occupa di tutti gli algoritmi matematici che il software necessita. Consiste in una sola classe con 15 membri e 8 metodi molto complessi:
+- il costruttore che determina i pin dello spazio di lavoro, ovvero i luoghi di aggancio dei componenti, e inizializza tutti i membri;
+- il gruppo di metodi *select*, *draw*, *follow*, che collaborando gestiscono gli eventi del mouse (click e spostamento), sfruttano il modulo *components.py* per disegnare il circuito in base alle preferenze dell'utente, mostrano un'anteprima del componente disegnato prima della conferma dell'utente e modificano le variabili di classe affinchè gli altri metodi possano lavorare;
+- il gruppo di metodi *nodes_update*, *study*, si occupano di aggiornare la ricerca dei nodi, dei rami e dei componenti in base alle definizioni date dalle leggi di Kirchhoff, studiano il circuito mediante decine di cicli for e while che impostano e risolvono sistemi matematici. Il lavoro dietro questo gruppo di metodi ha richiesto mesi e la stesura di complicati algoritmi che generalizzino le leggi fisiche alla base del calcolo dei circuiti.
+- il gruppo di metodi *delete*, *delete_update*, utile all'eliminazione dei componenti quando richiesto dall'utente e anche alla pulizia di tutti i vettori e strutture dati dai componenti eliminati.
+
+Infine il file *utils.py* contiene qualche funzione che serve a semplificare e ad evitare la ripetizione di pezzi di codice.
